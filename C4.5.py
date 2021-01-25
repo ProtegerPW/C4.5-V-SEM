@@ -16,11 +16,11 @@ from collections import Counter
 
 
 # csvdata class to store the csv data
-class csvdata():
+class inputdata():
     def __init__(self):
         self.rows = []
-        self.X
-        self.Y
+        self.X = []
+        self.Y = []
 
 # the node class that will make up the tree
 
@@ -40,11 +40,11 @@ class decisionTreeNode():
 # convert attributes that are numeric to floats. In the wine dataset all the columns will be numeric except the last one
 
 
-def preprocessing(dataset):
-    for example in dataset.rows:
-        for x in range(len(dataset.rows[0])):
-            if dataset.attributes[x] == 'True':
-                example[x] = float(example[x])
+# def preprocessing(dataset):
+#     for example in dataset.rows:
+#         for x in range(len(dataset.rows[0])):
+#             if dataset.attributes[x] == 'True':
+#                 example[x] = float(example[x])
 
 
 # compute the decision tree recursively
@@ -72,9 +72,9 @@ def compute_decision_tree(dataset, parent_node):
 
     # The information gain given by the best attribute
     global_max_gain = 0
+    global_min_gain = 0.01
 
     global_split_val = None
-    min_gain = 0.01
 
     # for each column of data
     for index, attr_index in enumerate(dataset.X.columns):
@@ -85,7 +85,7 @@ def compute_decision_tree(dataset, parent_node):
         uniq_param_list = dataset.X[attr_index].unique()
         uniq_param_list.sort()
         print("Uniq param: ", uniq_param_list)
-        print("Type: ", type(uniq_param_list[0]) is str)
+        print("Type: ", type(uniq_param_list[0]))
        # print("Print type: ", type(uniq_param_list[0]) is str)
 
         # these are the values we can split on, now we must find the best one
@@ -111,14 +111,27 @@ def compute_decision_tree(dataset, parent_node):
                 attr_index, uniq_param_list, dataset, main_entropy)
             print(current_gain)
         else:
-            current_gain = maximum_inf_gain(
-                uniq_param_list, dataset, main_entropy)
+            for value in uniq_param_list:
+                current_gain = num_inf_gain(
+                    value, attr_index, uniq_param_list, dataset, main_entropy)
 
-        # for value in uniq_param_list:
-        #     # calculate the gain if we split on this value
-        #     # if gain is greater than local_max_gain, save this gain and this value
-        #     current_gain=calculate_information_gain(
-        #         attr_index, dataset.X, value, main_entropy)
+                if (current_gain > local_max_gain):
+                    local_max_gain = current_gain
+                    local_split_val = value
+
+            if(local_max_gain > global_max_gain):
+                global_max_gain = local_max_gain
+                global_split_val = local_split_val
+                splitting_attribute = attr_index
+
+    if(global_max_gain <= global_min_gain):
+        node.is_leaf_node = True
+
+    # for value in uniq_param_list:
+    #     # calculate the gain if we split on this value
+    #     # if gain is greater than local_max_gain, save this gain and this value
+    #     current_gain=calculate_information_gain(
+    #         attr_index, dataset.X, value, main_entropy)
 
     #         if (current_gain > local_max_gain):
     #             local_max_gain=current_gain
@@ -186,30 +199,47 @@ def get_classification(example, node, class_col_index):
 ##################################################
 
 
-def calculate_entropy(dataset, classifier):
+def calculate_entropy(dataset):
+    decision_list = dataset.Y.unique()
+    decision_list.sort()
 
-    # get count of all the rows with classification 1
-    ones = count_positives(dataset.rows, dataset.attributes, classifier)
+    length_uniq_decision = len(decision_list)
 
-    # get the count of all the rows in the dataset.
-    total_rows = len(dataset.rows)
-    # from the above two we can get the count of rows with classification 0 too
+    ent_list = [None] * length_uniq_decision
 
-    # Entropy formula is sum of p*log2(p). Referred the slides. P is the probability
-    entropy = 0
+    for decision in range(length_uniq_decision):
+        ent_list[decision] = np.sum(
+            dataset.Y == decision_list[decision]) + 0.00001
 
-    # probability p of classification 1 in total data
-    p = ones / total_rows
-    if (p != 0):
-        entropy += p * math.log(p, 2)
-    # probability p of classification 0 in total data
-    p = (total_rows - ones)/total_rows
-    if (p != 0):
-        entropy += p * math.log(p, 2)
+    sum_ent_list = sum(ent_list)
+    for i in range(len(ent_list)):
+        ent_list[i] = (-1)*(ent_list[i]/sum_ent_list) * \
+            math.log(ent_list[i]/sum_ent_list, 2)
 
-    # from the formula
-    entropy = -entropy
-    return entropy
+    return sum(ent_list)
+
+    # # get count of all the rows with classification 1
+    # ones=count_positives(dataset.rows, dataset.attributes, classifier)
+
+    # # get the count of all the rows in the dataset.
+    # total_rows=len(dataset.rows)
+    # # from the above two we can get the count of rows with classification 0 too
+
+    # # Entropy formula is sum of p*log2(p). Referred the slides. P is the probability
+    # entropy=0
+
+    # # probability p of classification 1 in total data
+    # p=ones / total_rows
+    # if (p != 0):
+    #     entropy += p * math.log(p, 2)
+    # # probability p of classification 0 in total data
+    # p=(total_rows - ones)/total_rows
+    # if (p != 0):
+    #     entropy += p * math.log(p, 2)
+
+    # # from the formula
+    # entropy=-entropy
+    # return entropy
 
 ##################################################
 # Calculate the gain of a particular attribute split
@@ -218,6 +248,7 @@ def calculate_entropy(dataset, classifier):
 
 def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
     decision_list = dataset.Y.unique()
+    print("Opt inf gain: ", type(dataset.Y))
     decision_list.sort()
 
     length_uniq_param = len(uniq_param_list)
@@ -253,8 +284,87 @@ def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
     return (main_entropy - sum(ent_uniq_param)) / sum(prob_uniq_param)
 
 
-def maximum_inf_gain(uniq_param_list, dataset, main_entropy):
-    return
+def num_inf_gain(value, param, uniq_param_list, dataset, main_entropy):
+
+    upper_set = inputdata()
+    lower_set = inputdata()
+    split_ent = 0
+
+    # print(type(dataset.X))
+    # print(type(dataset.X.iloc[0]))
+    # print(type(dataset.Y.iloc[2]))
+    # print(type(upper_set.Y))
+
+    for row in range(len(dataset.X)):
+        if dataset.X.iloc[row][param] >= value:
+            # print(dataset.X.iloc[row][param], value)
+            upper_set.X.append(dataset.X.iloc[row])
+            upper_set.Y.append(dataset.Y.iloc[row])
+        else:
+            lower_set.X.append(dataset.X.iloc[row])
+            lower_set.Y.append(dataset.Y.iloc[row])
+
+    upper_set.Y = pd.Series(upper_set.Y, dtype=int)
+    lower_set.Y = pd.Series(lower_set.Y, dtype=int)
+
+    if (len(upper_set.X) == 0 or len(lower_set.X) == 0):
+        return -1
+
+    split_ent += calculate_entropy(upper_set) * len(upper_set.X)/len(dataset.X)
+
+    split_ent += calculate_entropy(lower_set) * len(lower_set.X)/len(dataset.X)
+
+    return main_entropy - split_ent
+
+    # print(row)
+
+    # print(row[param] >= value)
+
+    #    if (row(2) >= value):
+    #         # print(row[param])
+    #         upper_set.X.append(row)
+    #         print("Index: ", row)
+    #         print(dataset.Y[index])
+    #         tempVari = dataset.Y.iloc[index]
+    #         upper_set.Y.append(tempVari)
+    #     else:
+    #         lower_set.X.append(row)
+    # lower_set.Y.append(dataset.Y[index])
+
+    # decision_list = dataset.Y.unique()
+    # decision_list.sort()
+
+    # length_uniq_param = len(uniq_param_list)
+    # length_uniq_decision = len(decision_list)
+
+    # ent_uniq_param = [None] * length_uniq_param
+    # ent_list = [None] * length_uniq_decision
+
+    # # for count_param in range(length_uniq_param):
+    #   prob_uniq_param = np.sum(
+    #        dataset.X[param] == param)
+
+    #    for decision in range(length_uniq_decision):
+    #         ent_list[decision] = np.sum((dataset.X[param] == uniq_param_list[count_param]) & (
+    #             dataset.Y == decision_list[decision])) + 0.00001
+
+    #     sum_ent_list = sum(ent_list)
+    #     for i in range(len(ent_list)):
+    #         ent_list[i] = (-1)*(ent_list[i]/sum_ent_list) * \
+    #             math.log(ent_list[i]/sum_ent_list, 2)
+
+    #     ent_uniq_param[count_param] = sum(ent_list)
+
+    # num_of_records = len(dataset.X)
+    # for i in range(len(ent_uniq_param)):
+    #     ent_uniq_param[i] = prob_uniq_param[i] / \
+    #         num_of_records * ent_uniq_param[i]
+
+    #     prob_uniq_param[i] = (-1) * prob_uniq_param[i]/num_of_records * \
+    #         math.log(prob_uniq_param[i]/num_of_records, 2)
+
+    # return (main_entropy - sum(ent_uniq_param)) / sum(prob_uniq_param)
+    # return
 
 
 def calculate_information_gain(attr_index, dataset, value, main_entropy):
@@ -366,12 +476,12 @@ def prune_tree(root, node, validate_set, best_score):
         return new_score
 
 
-class inputdata():
-    def __init__(self, classifier):
-        self.rows = []
-        self.attributes = []
-        self.classifier = classifier
-        self.classifier_col_ind = None
+# class inputdata():
+#     def __init__(self, classifier):
+#         self.rows = []
+#         self.attributes = []
+#         self.classifier = classifier
+#         self.classifier_col_ind = None
 
 
 def splitdataset(balance_data, classifier):
@@ -399,9 +509,11 @@ def run_decision_tree(fileName, classifierLabel):
     df = pd.read_csv(fileName)
     print(df)
 
+    # preprocessing(df)
+
     # TODO preprocessing dataset ???
-    train_set = inputdata("")
-    test_set = inputdata("")
+    train_set = inputdata()
+    test_set = inputdata()
 
     train_set.X, test_set.X, train_set.Y, test_set.Y = splitdataset(
         df, classifierLabel)
@@ -498,6 +610,14 @@ def run_decision_tree(fileName, classifierLabel):
     # f = open("result.txt", "w")
     # f.write("accuracy: %.4f" % mean_accuracy)
     # f.close()
+
+
+def preprocessing(dataset):
+    for index, row in dataset.iterrows():
+        for i in range(len(dataset.columns)):
+            if (type(i) != str):
+                print(i)
+                row[i] = int(row[i])
 
 
 if __name__ == "__main__":
