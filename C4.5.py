@@ -25,11 +25,10 @@ class inputdata():
 
 
 class decisionTreeNode():
-    def __init__(self, classification, attribute_split_index, attribute_split_value, parent, child, height, is_leaf_node):
+    def __init__(self, classification, attribute_split_value, parent, child, height, is_leaf_node):
 
         self.classification = None
         self.attribute_split = None
-        self.attribute_split_index = None
         self.attribute_split_value = None
         self.parent = parent
         self.child = []
@@ -39,7 +38,7 @@ class decisionTreeNode():
 
 # compute the decision tree recursively
 def compute_decision_tree(dataset, parent_node):
-    node = decisionTreeNode(None, None, None, parent_node, None, None, True)
+    node = decisionTreeNode(None, None, parent_node, None, None, True)
 
     if (parent_node == None):
         node.height = 0
@@ -60,7 +59,7 @@ def compute_decision_tree(dataset, parent_node):
     # attribuite which splits the dataset
     splitting_attribute = None
 
-    # The information gain given by the best attribute
+    # the information gain given by the best attribute
     global_max_gain = 0
     global_min_gain = 0.0001
     global_split_val = None
@@ -68,11 +67,9 @@ def compute_decision_tree(dataset, parent_node):
     # for each column of data calculate entropy
     for index, attr_index in enumerate(dataset.X.columns):
 
-        local_max_gain = 0
-        local_split_val = None
-
         uniq_param_list = dataset.X[attr_index].unique()
         uniq_param_list.sort()
+        print("uniq_param_list: ", uniq_param_list)
         # print("Uniq param: ", uniq_param_list)
         # print("Type: ", type(uniq_param_list[0]))
        # print("Print type: ", type(uniq_param_list[0]) is str)
@@ -89,7 +86,10 @@ def compute_decision_tree(dataset, parent_node):
                 global_split_val = uniq_param_list
                 splitting_attribute = attr_index
         else:
-            # if type is numerical
+            # if type is numerical find the best split value
+            local_max_gain = 0
+            local_split_val = None
+
             for value in uniq_param_list:
                 current_gain = num_inf_gain(
                     value, attr_index, uniq_param_list, dataset, main_entropy)
@@ -134,8 +134,8 @@ def compute_decision_tree(dataset, parent_node):
         right_child.X = pd.DataFrame(right_child.X)
         left_child.X = pd.DataFrame(left_child.X)
 
-        right_child.X.drop(columns=splitting_attribute)
-        left_child.X.drop(columns=splitting_attribute)
+        right_child.X.drop(splitting_attribute, 1, inplace=True)
+        left_child.X.drop(splitting_attribute, 1, inplace=True)
 
         print("size of childs (numerical): ", len(
             right_child.X), len(left_child.X))
@@ -156,7 +156,7 @@ def compute_decision_tree(dataset, parent_node):
         # print("Type of childs: ", type(child[0]), len(child))
         # print("Global_split_val: ",
         #       global_split_val[1], dataset.X.iloc[4][splitting_attribute])
-        print("Dataset size: ", len(dataset.X))
+        # print("Dataset size: ", len(dataset.X))
         # print(dataset.X["schoolsup"])
 
         for uniq in range(len(global_split_val)):
@@ -172,8 +172,8 @@ def compute_decision_tree(dataset, parent_node):
         for i in range(len(child)):
             child[i].X = pd.DataFrame(child[i].X)
             child[i].Y = pd.Series(child[i].Y, dtype=int)
-            child[i].X.drop(columns=splitting_attribute)
-            print("Child [i]", child[i].X)
+            child[i].X.drop(splitting_attribute, axis=1, inplace=True)
+            # print("Child [i]", child[i].X)
             # print(child[i].X)
             node.child.append(compute_decision_tree(child[i], node))
 
@@ -208,14 +208,14 @@ def compute_decision_tree(dataset, parent_node):
 
 
 def classify_leaf(dataset):
-    attr_list = dataset.Y.unique()
-    attr_list.sort()
-    count_attr = [None] * len(attr_list)
-    for i in len(count_attr):
-        count_attr[i] = np.sum(dataset.Y == attr_list[i])
+    decision_list = dataset.Y.unique()
+    decision_list.sort()
+    count_decision = [None] * len(decision_list)
+    for i in len(count_decision):
+        count_decision[i] = np.sum(dataset.Y == decision_list[i])
 
-    biggest_index = count_attr.index(max_value)
-    return attr_list[biggest_index]
+    biggest_index = count_decision.index(max_value)
+    return decision_list[biggest_index]
 
 
 # Final evaluation of the data
@@ -284,6 +284,10 @@ def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
 
         ent_uniq_param[count_param] = sum(ent_list)
 
+    print("Sum of: ", sum(prob_uniq_param), type(prob_uniq_param))
+    # if sum(prob_uniq_param) < 1:
+    #     return -1
+
     num_of_records = len(dataset.X)
     # print("Prob_uniq_param: ", prob_uniq_param)
     # print("Ent_uniq_param: ", ent_uniq_param)
@@ -294,6 +298,8 @@ def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
 
         prob_uniq_param[i] = (-1) * prob_uniq_param[i]/num_of_records * \
             math.log(prob_uniq_param[i]/num_of_records, 2)
+        if sum(prob_uniq_param) == 0:
+            return 0
 
     return ((main_entropy - sum(ent_uniq_param)) / sum(prob_uniq_param))
 
@@ -456,7 +462,7 @@ def run_decision_tree(fileName, classifierLabel):
     # create decision tree from the root
     root = compute_decision_tree(train_set, None)
 
-    print(root)
+    print("Koniec działania algorytmu")
 
     #     # Classify the test set using the tree we just constructed
     #     results = []
