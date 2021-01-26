@@ -25,9 +25,10 @@ class inputdata():
 
 
 class decisionTreeNode():
-    def __init__(self, classification, attribute_split_value, parent, child, height, is_leaf_node):
+    def __init__(self, classification, value, attribute_split_value, parent, child, height, is_leaf_node):
 
         self.classification = None
+        self.value = None
         self.attribute_split = None
         self.attribute_split_value = None
         self.parent = parent
@@ -38,7 +39,7 @@ class decisionTreeNode():
 
 # compute the decision tree recursively
 def compute_decision_tree(dataset, parent_node):
-    node = decisionTreeNode(None, None, parent_node, None, None, True)
+    node = decisionTreeNode(None, None, None, parent_node, None, None, True)
 
     if (parent_node == None):
         node.height = 0
@@ -173,6 +174,7 @@ def compute_decision_tree(dataset, parent_node):
             child[i].X = pd.DataFrame(child[i].X)
             child[i].Y = pd.Series(child[i].Y, dtype=int)
             child[i].X.drop(splitting_attribute, axis=1, inplace=True)
+            child[i].value = global_split_val[i]
             # print("Child [i]", child[i].X)
             # print(child[i].X)
             node.child.append(compute_decision_tree(child[i], node))
@@ -219,18 +221,24 @@ def classify_leaf(dataset):
 
 
 # Final evaluation of the data
-def get_classification(example, node, class_col_index):
+def get_classification(row, node):
     if (node.is_leaf_node == True):
         return node.classification
     else:
-        if (example[node.attribute_split_index] >= node.attribute_split_value):
-            return get_classification(example, node.left_child, class_col_index)
+        if(type(node.attribute_split_value) == np.int64):
+            if (row[node.attribute_split] >= node.attribute_split_value):
+                return get_classification(row, node.child[0])
+            else:
+                return get_classification(row, node.child[1])
         else:
-            return get_classification(example, node.right_child, class_col_index)
+            for i in range(len(node.child)):
+                if (row[node.attribute_split] == node.child[i].value):
+                    return get_classification(row, node.child[i])
+                    break
 
-##################################################
-# Calculate the entropy of the current dataset
-##################################################
+            ##################################################
+            # Calculate the entropy of the current dataset
+            ##################################################
 
 
 def calculate_entropy(dataset):
@@ -444,6 +452,19 @@ def splitdataset(balance_data, classifier):
     return X_train, X_test, y_train, y_test
 
 
+def print_tree(node):
+    if node.is_leaf_node:
+        print(node.classification)
+        return
+    else:
+        print("Atrybute_split: ", node.attribute_split, node.height)
+
+    if node.child:
+        for each in range(node.child):
+            print_tree(each)
+    return
+
+
 def run_decision_tree(fileName, classifierLabel):
     # read dataFrame from file
     df = pd.read_csv(fileName)
@@ -463,6 +484,14 @@ def run_decision_tree(fileName, classifierLabel):
     root = compute_decision_tree(train_set, None)
 
     print("Koniec działania algorytmu")
+    # print_tree(root)
+    scores = []
+    for row in range(len(test_set.X)):
+        decision = get_classification(test_set.X.iloc[row], root)
+        scores.append(decision == test_set.Y.iloc[row])
+
+    accuracy = float(scores.count(True))/float(len(scores))
+    print("Accuracy: %.4f" % accuracy)
 
     #     # Classify the test set using the tree we just constructed
     #     results = []
