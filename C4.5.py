@@ -373,63 +373,63 @@ def count_main_entropy(inputColumn):
     return sum(entOfValues)
 
 
-def validate_tree(node, dataset):
-    total = len(dataset.rows)
-    correct = 0
-    for row in dataset.rows:
-        # validate example
-        correct += validate_row(node, row)
-    return correct/total
+# def validate_tree(node, dataset):
+#     total = len(dataset.rows)
+#     correct = 0
+#     for row in dataset.rows:
+#         # validate example
+#         correct += validate_row(node, row)
+#     return correct/total
 
 # Validate row (for finding best score before pruning)
 
 
-def validate_row(node, row):
-    if (node.is_leaf_node == True):
-        projected = node.classification
-        actual = int(row[-1])
-        if (projected == actual):
-            return 1
-        else:
-            return 0
-    value = row[node.attribute_split_index]
-    if (value >= node.attribute_split_value):
-        return validate_row(node.left_child, row)
-    else:
-        return validate_row(node.right_child, row)
+# def validate_row(node, row):
+#     if (node.is_leaf_node == True):
+#         projected = node.classification
+#         actual = int(row[-1])
+#         if (projected == actual):
+#             return 1
+#         else:
+#             return 0
+#     value = row[node.attribute_split_index]
+#     if (value >= node.attribute_split_value):
+#         return validate_row(node.left_child, row)
+#     else:
+#         return validate_row(node.right_child, row)
 
 ##################################################
 # Prune tree
 ##################################################
 
 
-def prune_tree(root, node, validate_set, best_score):
-    # if node is a leaf
-    if (node.is_leaf_node == True):
-        classification = node.classification
-        node.parent.is_leaf_node = True
-        node.parent.classification = node.classification
-        if (node.height < 20):
-            new_score = validate_tree(root, validate_set)
-        else:
-            new_score = 0
+# def prune_tree(root, node, validate_set, best_score):
+#     # if node is a leaf
+#     if (node.is_leaf_node == True):
+#         classification = node.classification
+#         node.parent.is_leaf_node = True
+#         node.parent.classification = node.classification
+#         if (node.height < 20):
+#             new_score = validate_tree(root, validate_set)
+#         else:
+#             new_score = 0
 
-        if (new_score >= best_score):
-            return new_score
-        else:
-            node.parent.is_leaf_node = False
-            node.parent.classification = None
-            return best_score
-    # if its not a leaf
-    else:
-        new_score = prune_tree(root, node.left_child, validate_set, best_score)
-        if (node.is_leaf_node == True):
-            return new_score
-        new_score = prune_tree(root, node.right_child, validate_set, new_score)
-        if (node.is_leaf_node == True):
-            return new_score
+#         if (new_score >= best_score):
+#             return new_score
+#         else:
+#             node.parent.is_leaf_node = False
+#             node.parent.classification = None
+#             return best_score
+#     # if its not a leaf
+#     else:
+#         new_score = prune_tree(root, node.left_child, validate_set, best_score)
+#         if (node.is_leaf_node == True):
+#             return new_score
+#         new_score = prune_tree(root, node.right_child, validate_set, new_score)
+#         if (node.is_leaf_node == True):
+#             return new_score
 
-        return new_score
+#         return new_score
 
 
 def splitdataset(balance_data, classifier):
@@ -524,12 +524,12 @@ def run_decision_tree(fileName, classifierLabel):
     # f.close()
 
 
-def preprocessing(dataset):
-    for index, row in dataset.iterrows():
-        for i in range(len(dataset.columns)):
-            if (type(i) != str):
-                print(i)
-                row[i] = int(row[i])
+# def preprocessing(dataset):
+#     for index, row in dataset.iterrows():
+#         for i in range(len(dataset.columns)):
+#             if (type(i) != str):
+#                 print(i)
+#                 row[i] = int(row[i])
 
 
 if __name__ == "__main__":
