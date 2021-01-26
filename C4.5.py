@@ -46,7 +46,7 @@ def compute_decision_tree(dataset, parent_node):
     else:
         node.height = node.parent.height + 1
 
-    # count_positives() will count the number of rows with classification "1"
+    # count entropy of all possible decision in dataset
     main_entropy = count_main_entropy(dataset.Y)
 
     # each value belongs to the same class -> leaf
@@ -57,16 +57,15 @@ def compute_decision_tree(dataset, parent_node):
     else:
         node.is_leaf_node = False
 
-    # The index of the attribute we will split on
+    # attribuite which splits the dataset
     splitting_attribute = None
 
     # The information gain given by the best attribute
     global_max_gain = 0
-    global_min_gain = 0.01
-
+    global_min_gain = 0.0001
     global_split_val = None
 
-    # for each column of data
+    # for each column of data calculate entropy
     for index, attr_index in enumerate(dataset.X.columns):
 
         local_max_gain = 0
@@ -74,22 +73,22 @@ def compute_decision_tree(dataset, parent_node):
 
         uniq_param_list = dataset.X[attr_index].unique()
         uniq_param_list.sort()
-        print("Uniq param: ", uniq_param_list)
-        print("Type: ", type(uniq_param_list[0]))
+        # print("Uniq param: ", uniq_param_list)
+        # print("Type: ", type(uniq_param_list[0]))
        # print("Print type: ", type(uniq_param_list[0]) is str)
 
+        # if type is not numerical
         if(type(uniq_param_list[0]) is str):
             current_gain = optimal_inf_gain(
                 attr_index, uniq_param_list, dataset, main_entropy)
-            print(current_gain)
+            print("Current gain is equal: ", current_gain)
 
             if(current_gain > global_max_gain):
                 global_max_gain = current_gain
                 global_split_val = uniq_param_list
-                # print("Global split set: ", type(global_split_val))
                 splitting_attribute = attr_index
-
         else:
+            # if type is numerical
             for value in uniq_param_list:
                 current_gain = num_inf_gain(
                     value, attr_index, uniq_param_list, dataset, main_entropy)
@@ -110,23 +109,18 @@ def compute_decision_tree(dataset, parent_node):
 
     print("Global attribute: ", splitting_attribute)
     print("Global split value: ", global_split_val)
-    print(type(global_split_val))
 
     node.attribute_split = splitting_attribute
     node.attribute_split_value = global_split_val
 
     if (type(global_split_val) == np.int64):
 
-        # child = [inputdata()] * 2
         right_child = inputdata()
-        # print("Right child: ", type(right_child.X))
         left_child = inputdata()
 
         for row in range(len(dataset.X)):
             if dataset.X.iloc[row][splitting_attribute] >= global_split_val:
-                # print(dataset.X.iloc[row][param], value)
                 right_child.X.append(dataset.X.iloc[row])
-                # print("Type of datasetX: ", type(dataset.X.iloc[row]))
                 right_child.Y.append(dataset.Y.iloc[row])
             else:
                 left_child.X.append(dataset.X.iloc[row])
@@ -134,10 +128,7 @@ def compute_decision_tree(dataset, parent_node):
 
         right_child.Y = pd.Series(right_child.Y, dtype=int)
         left_child.Y = pd.Series(left_child.Y, dtype=int)
-        # print(type(right_child.X))
-        # print(right_child.X)
-        # right_child.X = pd.concat(right_child.X, axis=0)
-        # left_child.X = pd.concat(left_child.X, axis=0)
+
         right_child.X = pd.DataFrame(right_child.X)
         left_child.X = pd.DataFrame(left_child.X)
 
@@ -147,10 +138,11 @@ def compute_decision_tree(dataset, parent_node):
         node.child.append(compute_decision_tree(left_child, node))
 
         return node
-    else:
-        # print("rest")
 
+    else:
         child = [inputdata()] * len(global_split_val)
+        print("Type of childs: ", type(child[0]), len(child))
+        print("Global_split_val: ", global_split_val)
         # print("Right child: ", type(right_child.X))
         for uniq in range(len(global_split_val)):
             for row in range(len(dataset.X)):
@@ -416,9 +408,7 @@ def run_decision_tree(fileName, classifierLabel):
     df = pd.read_csv(fileName)
     print(df)
 
-    # preprocessing(df)
-
-    # TODO preprocessing dataset ???
+    # divide into train and test set
     train_set = inputdata()
     test_set = inputdata()
 
@@ -428,6 +418,7 @@ def run_decision_tree(fileName, classifierLabel):
     print("Number of training records: %d" % len(train_set.X))
     print("Number of test records: %d" % len(test_set.X))
 
+    # create decision tree from the root
     root = compute_decision_tree(train_set, None)
 
     print(root)
