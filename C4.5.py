@@ -486,12 +486,16 @@ def run_decision_tree(fileName, classifierLabel):
     print("Koniec działania algorytmu")
     # print_tree(root)
     scores = []
+    decisions = []
     for row in range(len(test_set.X)):
         decision = get_classification(test_set.X.iloc[row], root)
+        decisions.append(decision)
         scores.append(decision == test_set.Y.iloc[row])
 
     accuracy = float(scores.count(True))/float(len(scores))
     print("Accuracy: %.4f" % accuracy)
+    print("Decisions", decisions)
+    print("Test_Y", test_set.Y)
 
     #     # Classify the test set using the tree we just constructed
     #     results = []
