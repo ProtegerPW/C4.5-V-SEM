@@ -87,6 +87,7 @@ def compute_decision_tree(dataset, parent_node):
             if(current_gain > global_max_gain):
                 global_max_gain = current_gain
                 global_split_val = uniq_param_list
+                # print("Global split set: ", type(global_split_val))
                 splitting_attribute = attr_index
 
         else:
@@ -114,6 +115,42 @@ def compute_decision_tree(dataset, parent_node):
 
     node.attribute_split = splitting_attribute
     node.attribute_split_value = global_split_val
+
+    if (type(global_split_val) == np.int64):
+
+        # child = [inputdata()] * 2
+        right_child = inputdata()
+        # print("Right child: ", type(right_child.X))
+        left_child = inputdata()
+
+        for row in range(len(dataset.X)):
+            if dataset.X.iloc[row][splitting_attribute] >= global_split_val:
+                # print(dataset.X.iloc[row][param], value)
+                right_child.X.append(dataset.X.iloc[row])
+                print("Type of datasetX: ", type(dataset.X.iloc[row]))
+                right_child.Y.append(dataset.Y.iloc[row])
+            else:
+                left_child.X.append(dataset.X.iloc[row])
+                left_child.Y.append(dataset.Y.iloc[row])
+
+        right_child.Y = pd.Series(right_child.Y, dtype=int)
+        left_child.Y = pd.Series(left_child.Y, dtype=int)
+        # print(type(right_child.X))
+        # print(right_child.X)
+        # right_child.X = pd.concat(right_child.X, axis=0)
+        # left_child.X = pd.concat(left_child.X, axis=0)
+        right_child.X = pd.DataFrame(right_child.X)
+        left_child.X = pd.DataFrame(left_child.X)
+
+        print(right_child.X)
+
+        node.child.append(compute_decision_tree(right_child, node))
+        node.child.append(compute_decision_tree(left_child, node))
+
+        return node
+    else:
+        print("rest")
+        # for rest
 
     # node.attribute_split_index=splitting_attribute
     # node.attribute_split=dataset.attributes[splitting_attribute]
