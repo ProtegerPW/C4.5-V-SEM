@@ -37,15 +37,6 @@ class decisionTreeNode():
         self.height = None
         self.is_leaf_node = True
 
-# convert attributes that are numeric to floats. In the wine dataset all the columns will be numeric except the last one
-
-
-# def preprocessing(dataset):
-#     for example in dataset.rows:
-#         for x in range(len(dataset.rows[0])):
-#             if dataset.attributes[x] == 'True':
-#                 example[x] = float(example[x])
-
 
 # compute the decision tree recursively
 def compute_decision_tree(dataset, parent_node):
@@ -88,28 +79,16 @@ def compute_decision_tree(dataset, parent_node):
         print("Type: ", type(uniq_param_list[0]))
        # print("Print type: ", type(uniq_param_list[0]) is str)
 
-        # these are the values we can split on, now we must find the best one
-        # attr_value_list = [example[attr_index] for example in dataset.X]
-        # remove duplicates from list of all attribute values
-        # attr_value_list = list(set(attr_value_list))
-
-        # if(len(attr_value_list) > 100):
-        #     attr_value_list = sorted(attr_value_list)
-        #     total = len(attr_value_list)
-        #     ten_percentile = int(total/10)
-        #     new_list = []
-        #     for x in range(1, 10):
-        #         new_list.append(attr_value_list[x*ten_percentile])
-        #     attr_value_list = new_list
-
-        # if len(uniq_param_list) == 2) -> count for binary
-        # else if type() is str -> count for nominal
-        # else count for numeric
-
         if(type(uniq_param_list[0]) is str):
             current_gain = optimal_inf_gain(
                 attr_index, uniq_param_list, dataset, main_entropy)
             print(current_gain)
+
+            if(current_gain > global_max_gain):
+                global_max_gain = current_gain
+                global_split_val = uniq_param_list
+                splitting_attribute = attr_index
+
         else:
             for value in uniq_param_list:
                 current_gain = num_inf_gain(
@@ -126,26 +105,15 @@ def compute_decision_tree(dataset, parent_node):
 
     if(global_max_gain <= global_min_gain):
         node.is_leaf_node = True
+        node.classification = classify_leaf(dataset)
+        return node
 
-    # for value in uniq_param_list:
-    #     # calculate the gain if we split on this value
-    #     # if gain is greater than local_max_gain, save this gain and this value
-    #     current_gain=calculate_information_gain(
-    #         attr_index, dataset.X, value, main_entropy)
+    print("Global attribute: ", splitting_attribute)
+    print("Global split value: ", global_split_val)
+    print(type(global_split_val))
 
-    #         if (current_gain > local_max_gain):
-    #             local_max_gain=current_gain
-    #             local_split_val=val
-
-    #     if (local_max_gain > maximum_info_gain):
-    #         maximum_info_gain=local_max_gain
-    #         split_val=local_split_val
-    #         splitting_attribute=attr_index
-
-    # if (maximum_info_gain <= minimum_info_gain or node.height > 20):
-    #     node.is_leaf_node=True
-    #     node.classification=classify_leaf(dataset, classifier)
-    #     return node
+    node.attribute_split = splitting_attribute
+    node.attribute_split_value = global_split_val
 
     # node.attribute_split_index=splitting_attribute
     # node.attribute_split=dataset.attributes[splitting_attribute]
@@ -174,14 +142,15 @@ def compute_decision_tree(dataset, parent_node):
 # # Classify dataset
 
 
-def classify_leaf(dataset, classifier):
-    ones = count_positives(dataset.rows, dataset.attributes, classifier)
-    total = len(dataset.rows)
-    zeroes = total - ones
-    if (ones >= zeroes):
-        return 1
-    else:
-        return 0
+def classify_leaf(dataset):
+    attr_list = dataset.Y.unique()
+    attr_list.sort()
+    count_attr = [None] * len(attr_list)
+    for i in len(count_attr):
+        count_attr[i] = np.sum(dataset.Y == attr_list[i])
+
+    biggest_index = count_attr.index(max_value)
+    return attr_list[biggest_index]
 
 
 # Final evaluation of the data
@@ -217,29 +186,6 @@ def calculate_entropy(dataset):
             math.log(ent_list[i]/sum_ent_list, 2)
 
     return sum(ent_list)
-
-    # # get count of all the rows with classification 1
-    # ones=count_positives(dataset.rows, dataset.attributes, classifier)
-
-    # # get the count of all the rows in the dataset.
-    # total_rows=len(dataset.rows)
-    # # from the above two we can get the count of rows with classification 0 too
-
-    # # Entropy formula is sum of p*log2(p). Referred the slides. P is the probability
-    # entropy=0
-
-    # # probability p of classification 1 in total data
-    # p=ones / total_rows
-    # if (p != 0):
-    #     entropy += p * math.log(p, 2)
-    # # probability p of classification 0 in total data
-    # p=(total_rows - ones)/total_rows
-    # if (p != 0):
-    #     entropy += p * math.log(p, 2)
-
-    # # from the formula
-    # entropy=-entropy
-    # return entropy
 
 ##################################################
 # Calculate the gain of a particular attribute split
@@ -315,89 +261,6 @@ def num_inf_gain(value, param, uniq_param_list, dataset, main_entropy):
     split_ent += calculate_entropy(lower_set) * len(lower_set.X)/len(dataset.X)
 
     return main_entropy - split_ent
-
-    # print(row)
-
-    # print(row[param] >= value)
-
-    #    if (row(2) >= value):
-    #         # print(row[param])
-    #         upper_set.X.append(row)
-    #         print("Index: ", row)
-    #         print(dataset.Y[index])
-    #         tempVari = dataset.Y.iloc[index]
-    #         upper_set.Y.append(tempVari)
-    #     else:
-    #         lower_set.X.append(row)
-    # lower_set.Y.append(dataset.Y[index])
-
-    # decision_list = dataset.Y.unique()
-    # decision_list.sort()
-
-    # length_uniq_param = len(uniq_param_list)
-    # length_uniq_decision = len(decision_list)
-
-    # ent_uniq_param = [None] * length_uniq_param
-    # ent_list = [None] * length_uniq_decision
-
-    # # for count_param in range(length_uniq_param):
-    #   prob_uniq_param = np.sum(
-    #        dataset.X[param] == param)
-
-    #    for decision in range(length_uniq_decision):
-    #         ent_list[decision] = np.sum((dataset.X[param] == uniq_param_list[count_param]) & (
-    #             dataset.Y == decision_list[decision])) + 0.00001
-
-    #     sum_ent_list = sum(ent_list)
-    #     for i in range(len(ent_list)):
-    #         ent_list[i] = (-1)*(ent_list[i]/sum_ent_list) * \
-    #             math.log(ent_list[i]/sum_ent_list, 2)
-
-    #     ent_uniq_param[count_param] = sum(ent_list)
-
-    # num_of_records = len(dataset.X)
-    # for i in range(len(ent_uniq_param)):
-    #     ent_uniq_param[i] = prob_uniq_param[i] / \
-    #         num_of_records * ent_uniq_param[i]
-
-    #     prob_uniq_param[i] = (-1) * prob_uniq_param[i]/num_of_records * \
-    #         math.log(prob_uniq_param[i]/num_of_records, 2)
-
-    # return (main_entropy - sum(ent_uniq_param)) / sum(prob_uniq_param)
-    # return
-
-
-def calculate_information_gain(attr_index, dataset, value, main_entropy):
-
-    classifier = dataset.attributes[attr_index]
-    attr_entropy = 0
-    total_rows = len(dataset.rows)
-    gain_upper_dataset = csvdata(classifier)
-    gain_lower_dataset = csvdata(classifier)
-    gain_upper_dataset.attributes = dataset.attributes
-    gain_lower_dataset.attributes = dataset.attributes
-    gain_upper_dataset.attribute_types = dataset.attribute_types
-    gain_lower_dataset.attribute_types = dataset.attribute_types
-
-    for example in dataset.rows:
-        if (example[attr_index] >= val):
-            gain_upper_dataset.rows.append(example)
-        elif (example[attr_index] < val):
-            gain_lower_dataset.rows.append(example)
-
-    if (len(gain_upper_dataset.rows) == 0 or len(gain_lower_dataset.rows) == 0):
-        return -1
-
-    attr_entropy += calculate_entropy(gain_upper_dataset,
-                                      classifier) * len(gain_upper_dataset.rows) / total_rows
-    attr_entropy += calculate_entropy(gain_lower_dataset,
-                                      classifier) * len(gain_lower_dataset.rows) / total_rows
-
-    return main_entropy - attr_entropy
-
-##################################################
-# count number of rows with classification "1"
-##################################################
 
 
 def count_main_entropy(inputColumn):
@@ -476,14 +339,6 @@ def prune_tree(root, node, validate_set, best_score):
         return new_score
 
 
-# class inputdata():
-#     def __init__(self, classifier):
-#         self.rows = []
-#         self.attributes = []
-#         self.classifier = classifier
-#         self.classifier_col_ind = None
-
-
 def splitdataset(balance_data, classifier):
 
     # Separating the target variable
@@ -522,68 +377,6 @@ def run_decision_tree(fileName, classifierLabel):
     print("Number of test records: %d" % len(test_set.X))
 
     root = compute_decision_tree(train_set, None)
-
-    # dataset = csvdata("")
-    # training_set = csvdata("")
-    # test_set = csvdata("")
-
-    # # Load data set
-    # # with open("data.csv") as f:
-    # #    dataset.rows = [tuple(line) for line in csv.reader(f, delimiter=",")]
-    # # print "Number of records: %d" % len(dataset.rows)
-    # f = open("data.csv")
-    # original_file = f.read()
-    # rowsplit_data = original_file.splitlines()
-    # dataset.rows = [rows.split(',') for rows in rowsplit_data]
-
-    # dataset.attributes = dataset.rows.pop(0)
-    # print(dataset.attributes)
-
-    # # this is used to generalize the code for other datasets.
-    # # true indicates numeric data. false in nominal data
-    # dataset.attribute_types = ['true', 'true', 'true', 'true',
-    #                            'true', 'true', 'true', 'true', 'true', 'true', 'true', 'false']
-
-    # classifier = dataset.attributes[-1]
-    # dataset.classifier = classifier
-
-    # # find index of classifier
-    # for a in range(len(dataset.attributes)):
-    #     if dataset.attributes[a] == dataset.classifier:
-    #         dataset.class_col_index = a
-    #     else:
-    #         dataset.class_col_index = range(len(dataset.attributes))[-1]
-
-    # print("classifier is %d" % dataset.class_col_index)
-    # # preprocessing the dataset
-    # preprocessing(dataset)
-
-    # training_set = copy.deepcopy(dataset)
-    # training_set.rows = []
-    # test_set = copy.deepcopy(dataset)
-    # test_set.rows = []
-    # validate_set = copy.deepcopy(dataset)
-    # validate_set.rows = []
-    # # Split training/test sets
-    # # You need to modify the following code for cross validation.
-
-    # # This is to create a validation set for post pruning
-    # # dataset.rows = [x for i, x in enumerate(dataset.rows) if i % 10 != 9]
-    # # validate_set.rows = [x for i, x in enumerate(dataset.rows) if i % 10 == 9]
-
-    # K = 10
-    # # Stores accuracy of the 10 runs
-    # accuracy = []
-    # #start = time.clock()
-    # for k in range(K):
-    #     print("Doing fold ", k)
-    #     training_set.rows = [x for i, x in enumerate(
-    #         dataset.rows) if i % K != k]
-    #     test_set.rows = [x for i, x in enumerate(dataset.rows) if i % K == k]
-
-    #     print("Number of training records: %d" % len(training_set.rows))
-    #     print("Number of test records: %d" % len(test_set.rows))
-    #     root = compute_decision_tree(training_set, None, classifier)
 
     #     # Classify the test set using the tree we just constructed
     #     results = []
