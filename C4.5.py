@@ -81,7 +81,8 @@ def compute_decision_tree(dataset, parent_node):
         if(type(uniq_param_list[0]) is str):
             current_gain = optimal_inf_gain(
                 attr_index, uniq_param_list, dataset, main_entropy)
-            print("Current gain is equal: ", current_gain)
+            print("Current gain for " + attr_index +
+                  " is equal: ", current_gain)
 
             if(current_gain > global_max_gain):
                 global_max_gain = current_gain
@@ -109,6 +110,7 @@ def compute_decision_tree(dataset, parent_node):
 
     print("Global attribute: ", splitting_attribute)
     print("Global split value: ", global_split_val)
+    # print("Global split type: ", type(global_split_val))
 
     node.attribute_split = splitting_attribute
     node.attribute_split_value = global_split_val
@@ -132,7 +134,13 @@ def compute_decision_tree(dataset, parent_node):
         right_child.X = pd.DataFrame(right_child.X)
         left_child.X = pd.DataFrame(left_child.X)
 
-        print(right_child.X)
+        right_child.X.drop(columns=splitting_attribute)
+        left_child.X.drop(columns=splitting_attribute)
+
+        print("size of childs (numerical): ", len(
+            right_child.X), len(left_child.X))
+
+        # print(right_child.X)
 
         node.child.append(compute_decision_tree(right_child, node))
         node.child.append(compute_decision_tree(left_child, node))
@@ -140,20 +148,33 @@ def compute_decision_tree(dataset, parent_node):
         return node
 
     else:
-        child = [inputdata()] * len(global_split_val)
-        print("Type of childs: ", type(child[0]), len(child))
-        print("Global_split_val: ", global_split_val)
-        # print("Right child: ", type(right_child.X))
+        child = []
+        for i in range(len(global_split_val)):
+            child.append(None)
+            child[i] = inputdata()
+
+        # print("Type of childs: ", type(child[0]), len(child))
+        # print("Global_split_val: ",
+        #       global_split_val[1], dataset.X.iloc[4][splitting_attribute])
+        print("Dataset size: ", len(dataset.X))
+        # print(dataset.X["schoolsup"])
+
         for uniq in range(len(global_split_val)):
             for row in range(len(dataset.X)):
-                if dataset.X.iloc[row][splitting_attribute] == global_split_val[uniq]:
+                # print(dataset.X.iloc[row][splitting_attribute]
+                #       == global_split_val[uniq])
+                if (dataset.X.iloc[row][splitting_attribute] == global_split_val[uniq]):
                     child[uniq].X.append(dataset.X.iloc[row])
                     child[uniq].Y.append(dataset.Y.iloc[row])
+
+        # print("Size of childs: ", len(child[0].X), len(child[1].X))
 
         for i in range(len(child)):
             child[i].X = pd.DataFrame(child[i].X)
             child[i].Y = pd.Series(child[i].Y, dtype=int)
-            print(child[i].X)
+            child[i].X.drop(columns=splitting_attribute)
+            print("Child [i]", child[i].X)
+            # print(child[i].X)
             node.child.append(compute_decision_tree(child[i], node))
 
         return node
@@ -238,7 +259,7 @@ def calculate_entropy(dataset):
 
 def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
     decision_list = dataset.Y.unique()
-    print("Opt inf gain: ", type(dataset.Y))
+    # print("Opt inf gain: ", type(dataset.Y))
     decision_list.sort()
 
     length_uniq_param = len(uniq_param_list)
@@ -264,14 +285,17 @@ def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
         ent_uniq_param[count_param] = sum(ent_list)
 
     num_of_records = len(dataset.X)
+    # print("Prob_uniq_param: ", prob_uniq_param)
+    # print("Ent_uniq_param: ", ent_uniq_param)
+
     for i in range(len(ent_uniq_param)):
-        ent_uniq_param[i] = prob_uniq_param[i] / \
-            num_of_records * ent_uniq_param[i]
+        ent_uniq_param[i] = (prob_uniq_param[i] /
+                             num_of_records) * ent_uniq_param[i]
 
         prob_uniq_param[i] = (-1) * prob_uniq_param[i]/num_of_records * \
             math.log(prob_uniq_param[i]/num_of_records, 2)
 
-    return (main_entropy - sum(ent_uniq_param)) / sum(prob_uniq_param)
+    return ((main_entropy - sum(ent_uniq_param)) / sum(prob_uniq_param))
 
 
 def num_inf_gain(value, param, uniq_param_list, dataset, main_entropy):
@@ -300,16 +324,27 @@ def num_inf_gain(value, param, uniq_param_list, dataset, main_entropy):
     if (len(upper_set.X) == 0 or len(lower_set.X) == 0):
         return -1
 
-    split_ent += calculate_entropy(upper_set) * len(upper_set.X)/len(dataset.X)
+    size_of_dataset = len(dataset.X)
+    size_of_upper_set = len(upper_set.X)
+    size_of_lower_set = len(lower_set.X)
 
-    split_ent += calculate_entropy(lower_set) * len(lower_set.X)/len(dataset.X)
+    split_ent += calculate_entropy(upper_set) * \
+        size_of_upper_set/size_of_dataset
 
-    return main_entropy - split_ent
+    split_ent += calculate_entropy(lower_set) * \
+        size_of_lower_set/size_of_dataset
+
+    # print("Lower and upper set: ", len(lower_set.X), size_of_upper_set)
+
+    split_info = (-1) * (size_of_upper_set/size_of_dataset * math.log(size_of_upper_set/size_of_dataset, 2) +
+                         size_of_lower_set/size_of_dataset * math.log(size_of_lower_set/size_of_dataset, 2))
+
+    return (main_entropy - split_ent) / split_info
 
 
 def count_main_entropy(inputColumn):
     rowNum = len(inputColumn)
-    print(rowNum)
+    # print(rowNum)
 
     numOfValues = inputColumn.unique()
     numOfValues.sort()
@@ -317,10 +352,10 @@ def count_main_entropy(inputColumn):
 
     for x in range(len(numOfValues)):
         entOfValues[x] = np.sum(inputColumn == numOfValues[x])
+        # print("Main entropy: ", entOfValues)
         entOfValues[x] = (-1)*(entOfValues[x]/rowNum) * \
             math.log(entOfValues[x]/rowNum, 2)
 
-    print(sum(entOfValues))
     return sum(entOfValues)
 
 
