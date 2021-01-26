@@ -18,7 +18,6 @@ from collections import Counter
 # csvdata class to store the csv data
 class inputdata():
     def __init__(self):
-        self.rows = []
         self.X = []
         self.Y = []
 
@@ -127,7 +126,7 @@ def compute_decision_tree(dataset, parent_node):
             if dataset.X.iloc[row][splitting_attribute] >= global_split_val:
                 # print(dataset.X.iloc[row][param], value)
                 right_child.X.append(dataset.X.iloc[row])
-                print("Type of datasetX: ", type(dataset.X.iloc[row]))
+                # print("Type of datasetX: ", type(dataset.X.iloc[row]))
                 right_child.Y.append(dataset.Y.iloc[row])
             else:
                 left_child.X.append(dataset.X.iloc[row])
@@ -149,7 +148,23 @@ def compute_decision_tree(dataset, parent_node):
 
         return node
     else:
-        print("rest")
+        # print("rest")
+
+        child = [inputdata()] * len(global_split_val)
+        # print("Right child: ", type(right_child.X))
+        for uniq in range(len(global_split_val)):
+            for row in range(len(dataset.X)):
+                if dataset.X.iloc[row][splitting_attribute] == global_split_val[uniq]:
+                    child[uniq].X.append(dataset.X.iloc[row])
+                    child[uniq].Y.append(dataset.Y.iloc[row])
+
+        for i in range(len(child)):
+            child[i].X = pd.DataFrame(child[i].X)
+            child[i].Y = pd.Series(child[i].Y, dtype=int)
+            print(child[i].X)
+            node.child.append(compute_decision_tree(child[i], node))
+
+        return node
         # for rest
 
     # node.attribute_split_index=splitting_attribute
@@ -414,6 +429,8 @@ def run_decision_tree(fileName, classifierLabel):
     print("Number of test records: %d" % len(test_set.X))
 
     root = compute_decision_tree(train_set, None)
+
+    print(root)
 
     #     # Classify the test set using the tree we just constructed
     #     results = []
