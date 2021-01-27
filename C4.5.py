@@ -1,18 +1,8 @@
-# from __future__ import division
-
 import sys
 import pandas as pd
 import numpy as np
 import math
 from sklearn.model_selection import train_test_split
-
-# import operator
-# import copy
-# import csv
-# import time
-# import random
-
-from collections import Counter
 
 
 class inputdata():
