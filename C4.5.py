@@ -1,4 +1,4 @@
-from __future__ import division
+# from __future__ import division
 
 import sys
 import pandas as pd
@@ -6,22 +6,19 @@ import numpy as np
 import math
 from sklearn.model_selection import train_test_split
 
-import operator
-import copy
-import csv
-import time
-import random
+# import operator
+# import copy
+# import csv
+# import time
+# import random
 
 from collections import Counter
 
 
-# csvdata class to store the csv data
 class inputdata():
     def __init__(self):
         self.X = []
         self.Y = []
-
-# the node class that will make up the tree
 
 
 class decisionTreeNode():
@@ -50,7 +47,7 @@ def compute_decision_tree(dataset, parent_node):
     main_entropy = count_main_entropy(dataset.Y)
 
     # each value belongs to the same class -> leaf
-    if (main_entropy == 0):
+    if (main_entropy == 0.0):
         node.classification = dataset.Y[0]
         node.is_leaf_node = True
         return node
@@ -62,7 +59,6 @@ def compute_decision_tree(dataset, parent_node):
 
     # the information gain given by the best attribute
     global_max_gain = 0
-    global_min_gain = 0.0001
     global_split_val = None
 
     # for each column of data calculate entropy
@@ -70,10 +66,6 @@ def compute_decision_tree(dataset, parent_node):
 
         uniq_param_list = dataset.X[attr_index].unique()
         uniq_param_list.sort()
-        print("uniq_param_list: ", uniq_param_list)
-        # print("Uniq param: ", uniq_param_list)
-        # print("Type: ", type(uniq_param_list[0]))
-       # print("Print type: ", type(uniq_param_list[0]) is str)
 
         # if type is not numerical
         if(type(uniq_param_list[0]) is str):
@@ -104,14 +96,11 @@ def compute_decision_tree(dataset, parent_node):
                 global_split_val = local_split_val
                 splitting_attribute = attr_index
 
-    if(global_max_gain <= global_min_gain):
+    print("Global_max_gain", global_max_gain)
+    if(global_max_gain == 1.0):
         node.is_leaf_node = True
         node.classification = classify_leaf(dataset)
         return node
-
-    print("Global attribute: ", splitting_attribute)
-    print("Global split value: ", global_split_val)
-    # print("Global split type: ", type(global_split_val))
 
     node.attribute_split = splitting_attribute
     node.attribute_split_value = global_split_val
@@ -138,11 +127,6 @@ def compute_decision_tree(dataset, parent_node):
         right_child.X.drop(splitting_attribute, 1, inplace=True)
         left_child.X.drop(splitting_attribute, 1, inplace=True)
 
-        print("size of childs (numerical): ", len(
-            right_child.X), len(left_child.X))
-
-        # print(right_child.X)
-
         node.child.append(compute_decision_tree(right_child, node))
         node.child.append(compute_decision_tree(left_child, node))
 
@@ -154,69 +138,30 @@ def compute_decision_tree(dataset, parent_node):
             child.append(None)
             child[i] = inputdata()
 
-        # print("Type of childs: ", type(child[0]), len(child))
-        # print("Global_split_val: ",
-        #       global_split_val[1], dataset.X.iloc[4][splitting_attribute])
-        # print("Dataset size: ", len(dataset.X))
-        # print(dataset.X["schoolsup"])
-
         for uniq in range(len(global_split_val)):
             for row in range(len(dataset.X)):
-                # print(dataset.X.iloc[row][splitting_attribute]
-                #       == global_split_val[uniq])
                 if (dataset.X.iloc[row][splitting_attribute] == global_split_val[uniq]):
                     child[uniq].X.append(dataset.X.iloc[row])
                     child[uniq].Y.append(dataset.Y.iloc[row])
-
-        # print("Size of childs: ", len(child[0].X), len(child[1].X))
 
         for i in range(len(child)):
             child[i].X = pd.DataFrame(child[i].X)
             child[i].Y = pd.Series(child[i].Y, dtype=int)
             child[i].X.drop(splitting_attribute, axis=1, inplace=True)
             child[i].value = global_split_val[i]
-            # print("Child [i]", child[i].X)
-            # print(child[i].X)
             node.child.append(compute_decision_tree(child[i], node))
 
         return node
-        # for rest
-
-    # node.attribute_split_index=splitting_attribute
-    # node.attribute_split=dataset.attributes[splitting_attribute]
-    # node.attribute_split_value=split_val
-
-    # left_dataset=csvdata(classifier)
-    # right_dataset=csvdata(classifier)
-
-    # left_dataset.attributes=dataset.attributes
-    # right_dataset.attributes=dataset.attributes
-
-    # left_dataset.attribute_types=dataset.attribute_types
-    # right_dataset.attribute_types=dataset.attribute_types
-
-    # for row in dataset.rows:
-    #     if (splitting_attribute is not None and row[splitting_attribute] >= split_val):
-    #         left_dataset.rows.append(row)
-    #     elif (splitting_attribute is not None):
-    #         right_dataset.rows.append(row)
-
-    # node.left_child=compute_decision_tree(left_dataset, node, classifier)
-    # node.right_child=compute_decision_tree(right_dataset, node, classifier)
-
-    return node
-
-# # Classify dataset
 
 
 def classify_leaf(dataset):
     decision_list = dataset.Y.unique()
     decision_list.sort()
     count_decision = [None] * len(decision_list)
-    for i in len(count_decision):
+    for i in range(len(count_decision)):
         count_decision[i] = np.sum(dataset.Y == decision_list[i])
 
-    biggest_index = count_decision.index(max_value)
+    biggest_index = count_decision.index(max(count_decision))
     return decision_list[biggest_index]
 
 
@@ -235,10 +180,6 @@ def get_classification(row, node):
                 if (row[node.attribute_split] == node.child[i].value):
                     return get_classification(row, node.child[i])
                     break
-
-            ##################################################
-            # Calculate the entropy of the current dataset
-            ##################################################
 
 
 def calculate_entropy(dataset):
@@ -260,14 +201,9 @@ def calculate_entropy(dataset):
 
     return sum(ent_list)
 
-##################################################
-# Calculate the gain of a particular attribute split
-##################################################
-
 
 def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
     decision_list = dataset.Y.unique()
-    # print("Opt inf gain: ", type(dataset.Y))
     decision_list.sort()
 
     length_uniq_param = len(uniq_param_list)
@@ -292,22 +228,16 @@ def optimal_inf_gain(param, uniq_param_list, dataset, main_entropy):
 
         ent_uniq_param[count_param] = sum(ent_list)
 
-    print("Sum of: ", sum(prob_uniq_param), type(prob_uniq_param))
-    # if sum(prob_uniq_param) < 1:
-    #     return -1
-
     num_of_records = len(dataset.X)
-    # print("Prob_uniq_param: ", prob_uniq_param)
-    # print("Ent_uniq_param: ", ent_uniq_param)
 
     for i in range(len(ent_uniq_param)):
         ent_uniq_param[i] = (prob_uniq_param[i] /
                              num_of_records) * ent_uniq_param[i]
 
-        prob_uniq_param[i] = (-1) * prob_uniq_param[i]/num_of_records * \
+        prob_uniq_param[i] = (-1.0) * prob_uniq_param[i]/num_of_records * \
             math.log(prob_uniq_param[i]/num_of_records, 2)
         if sum(prob_uniq_param) == 0:
-            return 0
+            return 0.0
 
     return ((main_entropy - sum(ent_uniq_param)) / sum(prob_uniq_param))
 
@@ -316,16 +246,10 @@ def num_inf_gain(value, param, uniq_param_list, dataset, main_entropy):
 
     upper_set = inputdata()
     lower_set = inputdata()
-    split_ent = 0
-
-    # print(type(dataset.X))
-    # print(type(dataset.X.iloc[0]))
-    # print(type(dataset.Y.iloc[2]))
-    # print(type(upper_set.Y))
+    split_ent = 0.0
 
     for row in range(len(dataset.X)):
         if dataset.X.iloc[row][param] >= value:
-            # print(dataset.X.iloc[row][param], value)
             upper_set.X.append(dataset.X.iloc[row])
             upper_set.Y.append(dataset.Y.iloc[row])
         else:
@@ -336,7 +260,7 @@ def num_inf_gain(value, param, uniq_param_list, dataset, main_entropy):
     lower_set.Y = pd.Series(lower_set.Y, dtype=int)
 
     if (len(upper_set.X) == 0 or len(lower_set.X) == 0):
-        return -1
+        return -1.0
 
     size_of_dataset = len(dataset.X)
     size_of_upper_set = len(upper_set.X)
@@ -348,17 +272,14 @@ def num_inf_gain(value, param, uniq_param_list, dataset, main_entropy):
     split_ent += calculate_entropy(lower_set) * \
         size_of_lower_set/size_of_dataset
 
-    # print("Lower and upper set: ", len(lower_set.X), size_of_upper_set)
+    split_info = (-1.0) * (size_of_upper_set/size_of_dataset * math.log(size_of_upper_set/size_of_dataset, 2) +
+                           size_of_lower_set/size_of_dataset * math.log(size_of_lower_set/size_of_dataset, 2))
 
-    split_info = (-1) * (size_of_upper_set/size_of_dataset * math.log(size_of_upper_set/size_of_dataset, 2) +
-                         size_of_lower_set/size_of_dataset * math.log(size_of_lower_set/size_of_dataset, 2))
-
-    return (main_entropy - split_ent) / split_info
+    return float((main_entropy - split_ent) / split_info)
 
 
 def count_main_entropy(inputColumn):
     rowNum = len(inputColumn)
-    # print(rowNum)
 
     numOfValues = inputColumn.unique()
     numOfValues.sort()
@@ -366,75 +287,14 @@ def count_main_entropy(inputColumn):
 
     for x in range(len(numOfValues)):
         entOfValues[x] = np.sum(inputColumn == numOfValues[x])
-        # print("Main entropy: ", entOfValues)
+
         entOfValues[x] = (-1)*(entOfValues[x]/rowNum) * \
             math.log(entOfValues[x]/rowNum, 2)
-
     return sum(entOfValues)
-
-
-# def validate_tree(node, dataset):
-#     total = len(dataset.rows)
-#     correct = 0
-#     for row in dataset.rows:
-#         # validate example
-#         correct += validate_row(node, row)
-#     return correct/total
-
-# Validate row (for finding best score before pruning)
-
-
-# def validate_row(node, row):
-#     if (node.is_leaf_node == True):
-#         projected = node.classification
-#         actual = int(row[-1])
-#         if (projected == actual):
-#             return 1
-#         else:
-#             return 0
-#     value = row[node.attribute_split_index]
-#     if (value >= node.attribute_split_value):
-#         return validate_row(node.left_child, row)
-#     else:
-#         return validate_row(node.right_child, row)
-
-##################################################
-# Prune tree
-##################################################
-
-
-# def prune_tree(root, node, validate_set, best_score):
-#     # if node is a leaf
-#     if (node.is_leaf_node == True):
-#         classification = node.classification
-#         node.parent.is_leaf_node = True
-#         node.parent.classification = node.classification
-#         if (node.height < 20):
-#             new_score = validate_tree(root, validate_set)
-#         else:
-#             new_score = 0
-
-#         if (new_score >= best_score):
-#             return new_score
-#         else:
-#             node.parent.is_leaf_node = False
-#             node.parent.classification = None
-#             return best_score
-#     # if its not a leaf
-#     else:
-#         new_score = prune_tree(root, node.left_child, validate_set, best_score)
-#         if (node.is_leaf_node == True):
-#             return new_score
-#         new_score = prune_tree(root, node.right_child, validate_set, new_score)
-#         if (node.is_leaf_node == True):
-#             return new_score
-
-#         return new_score
 
 
 def splitdataset(balance_data, classifier):
 
-    # Separating the target variable
     feature_cols = list(balance_data.columns)
     feature_cols.remove(classifier)
     X = balance_data[feature_cols]
@@ -444,25 +304,7 @@ def splitdataset(balance_data, classifier):
     X_train, X_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.3, random_state=1)
 
-    # print("date in X: ", X)
-    # print("date in Y: ", Y)
-    # print("date in X_train: ", X_train)
-    # print("date in X_test: ", X_test)
-
     return X_train, X_test, y_train, y_test
-
-
-def print_tree(node):
-    if node.is_leaf_node:
-        print(node.classification)
-        return
-    else:
-        print("Atrybute_split: ", node.attribute_split, node.height)
-
-    if node.child:
-        for each in range(node.child):
-            print_tree(each)
-    return
 
 
 def run_decision_tree(fileName, classifierLabel):
@@ -483,8 +325,6 @@ def run_decision_tree(fileName, classifierLabel):
     # create decision tree from the root
     root = compute_decision_tree(train_set, None)
 
-    print("Koniec działania algorytmu")
-    # print_tree(root)
     scores = []
     decisions = []
     for row in range(len(test_set.X)):
@@ -494,42 +334,6 @@ def run_decision_tree(fileName, classifierLabel):
 
     accuracy = float(scores.count(True))/float(len(scores))
     print("Accuracy: %.4f" % accuracy)
-    print("Decisions", decisions)
-    print("Test_Y", test_set.Y)
-
-    #     # Classify the test set using the tree we just constructed
-    #     results = []
-    #     for instance in test_set.rows:
-    #         result = get_classification(
-    #             instance, root, test_set.class_col_index)
-    #         results.append(str(result) == str(instance[-1]))
-
-    #     # Accuracy
-    #     acc = float(results.count(True))/float(len(results))
-    #     print("accuracy: %.4f" % acc)
-
-    #     # pruning code currently disabled
-    #     # best_score = validate_tree(root, validate_set)
-    #     # post_prune_accuracy = 100*prune_tree(root, root, validate_set, best_score)
-    #     # print "Post-pruning score on validation set: " + str(post_prune_accuracy) + "%"
-    #     accuracy.append(acc)
-    #     del root
-
-    # mean_accuracy = math.fsum(accuracy)/10
-    # print("Accuracy  %f " % (mean_accuracy))
-    # #print("Took %f secs" % (time.clock() - start))
-    # # Writing results to a file (DO NOT CHANGE)
-    # f = open("result.txt", "w")
-    # f.write("accuracy: %.4f" % mean_accuracy)
-    # f.close()
-
-
-# def preprocessing(dataset):
-#     for index, row in dataset.iterrows():
-#         for i in range(len(dataset.columns)):
-#             if (type(i) != str):
-#                 print(i)
-#                 row[i] = int(row[i])
 
 
 if __name__ == "__main__":
